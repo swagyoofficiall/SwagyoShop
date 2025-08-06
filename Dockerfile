@@ -28,24 +28,22 @@ RUN apt-get update && apt-get install -y \
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copy existing application
+# Copy application code
 COPY . .
 
-# Set permissions
-RUN chown -R www-data:www-data /var/www \
-    && chmod -R 755 /var/www
+# Set correct permissions
+RUN chmod -R 775 storage bootstrap/cache \
+ && chown -R www-data:www-data storage bootstrap/cache
 
 # Install PHP dependencies
 RUN composer install --optimize-autoloader --no-dev --ignore-platform-req=ext-calendar --ignore-platform-req=ext-intl
 
-# Install Node modules and build frontend assets
+# Build frontend assets
 RUN npm install && npm run build || true
 
-# Laravel specific
-RUN php artisan key:generate || true
-RUN php artisan migrate --force || true
+# Serve Laravel with Artisan after caching config
+EXPOSE 8080
 
-EXPOSE 8000
-
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8080"]
-
+CMD php artisan config:cache \
+ && php artisan migrate --force || true \
+ && php artisan serve --host=0.0.0.0 --port=8080
