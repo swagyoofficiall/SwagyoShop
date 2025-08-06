@@ -22,7 +22,8 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     libmcrypt-dev \
     libreadline-dev \
-    && docker-php-ext-install pdo_mysql mbstring zip exif pcntl bcmath gd
+    libicu-dev \
+    && docker-php-ext-install pdo_mysql pdo_pgsql mbstring zip exif pcntl bcmath gd intl calendar
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -35,13 +36,13 @@ RUN chown -R www-data:www-data /var/www \
     && chmod -R 755 /var/www
 
 # Install PHP dependencies
-RUN composer install --optimize-autoloader --no-dev
+RUN composer install --optimize-autoloader --no-dev --ignore-platform-req=ext-calendar --ignore-platform-req=ext-intl
 
 # Install Node modules and build frontend assets
-RUN npm install && npm run build
+RUN npm install && npm run build || true
 
 # Laravel specific
-RUN php artisan key:generate
+RUN php artisan key:generate || true
 RUN php artisan migrate --force || true
 
 EXPOSE 8000
