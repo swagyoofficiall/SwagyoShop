@@ -1,14 +1,14 @@
 services:
   - type: web
     name: swagyo-shop
-    env: php
-    region: singapore
+    env: docker
     plan: free
-    buildCommand: |
-      composer install --optimize-autoloader --no-dev
-      php artisan config:cache
-    startCommand: php artisan serve --host 0.0.0.0 --port 10000
+    repo: https://github.com/swagyoofficiall/SwagyoShop
+    branch: main
+    dockerfilePath: Dockerfile
     envVars:
+      - key: APP_ENV
+        value: production
       - key: DB_CONNECTION
         value: pgsql
       - key: DB_HOST
@@ -21,7 +21,5 @@ services:
         value: postgres
       - key: DB_PASSWORD
         value: 9535118217@$&~K
-      - key: APP_ENV
-        value: production
       - key: APP_KEY
-        value: base64:xLz2OQ4yQH9az1j6F1zS4YhN5LMGpoL7M1a1+OpfZLg=
+        generateValue: true
