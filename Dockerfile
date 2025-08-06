@@ -36,14 +36,29 @@ RUN chmod -R 775 storage bootstrap/cache \
  && chown -R www-data:www-data storage bootstrap/cache
 
 # Install PHP dependencies
-RUN composer install --optimize-autoloader --no-dev --ignore-platform-req=ext-calendar --ignore-platform-req=ext-intl
+RUN composer install --optimize-autoloader --no-dev \
+    --ignore-platform-req=ext-calendar \
+    --ignore-platform-req=ext-intl
 
-# Build frontend assets
+# Generate Laravel app key
+RUN php artisan key:generate || true
+
+# Run migrations (ignore errors if already migrated)
+RUN php artisan migrate --force || true
+
+# ✅ Clear Laravel caches to avoid config/view issues
+RUN php artisan config:clear \
+ && php artisan cache:clear \
+ && php artisan view:clear \
+ && php artisan route:clear
+
+# Build frontend assets (ignore error if build script missing)
 RUN npm install && npm run build || true
 
-# Serve Laravel with Artisan after caching config
+# Expose app port
 EXPOSE 8080
 
+# Start Laravel server
 CMD php artisan config:cache \
  && php artisan migrate --force || true \
  && php artisan serve --host=0.0.0.0 --port=8080
